@@ -2,6 +2,7 @@
 
 function Get-PlatformConfiguration {
 
+    #Create the configuration object and populate it with the default values for the platform
     $config = [PlatformConfiguration]::new()
 
     $config.PddDirectory = "\\USDBTLBCA1MS1IT\pdd$\PDD"
