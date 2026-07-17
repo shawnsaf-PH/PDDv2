@@ -1,8 +1,8 @@
-using module ..\Models\PlatformConfiguration.ps1
+ . "$PSScriptRoot\..\Models\PlatformConfiguration.ps1"
 
 function Get-PlatformConfiguration {
 
-    $config = :new()
+    $config = [PlatformConfiguration]::new()
 
     $config.PddDirectory = "\\USDBTLBCA1MS1IT\pdd$\PDD"
     $config.ConfigDirectory = "\\USDBTLBCA1MS1IT\pdd$\Config"
