@@ -16,6 +16,7 @@ function Get-PlatformConfiguration {
 
     $config.Catalogs += "Win11.ini"
     $config.Catalogs += "Site.ini"
-
+    $config.Catalogs += "GlobalSite.ini"
+    $config.Catalogs += "Zeppelin.ini"
     return $config
 }
