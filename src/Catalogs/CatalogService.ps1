@@ -1,4 +1,5 @@
 . "$PSScriptRoot\CatalogParser.ps1"
+"$PSScriptRoot\..\Models\ApplicationDefinition.ps1"
 
 function Get-CatalogApplications {
 

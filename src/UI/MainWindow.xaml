@@ -19,26 +19,68 @@
                 FontWeight="Bold"
                 Margin="0,0,0,10"/>
 
-            <CheckBox Content="Basic"/>
-            <CheckBox Content="Option"/>
-            <CheckBox Content="Site"/>
-            <CheckBox Content="Custom"/>
-            <CheckBox Content="Prep"/>
-            <CheckBox Content="Zeppelin"/>
-            <CheckBox Content="Global Site"/>
 
+                <CheckBox Name="BasicCheckBox" Content="Basic" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="OptionCheckBox" Content="Option" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="SiteCheckBox" Content="Site" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="CustomCheckBox" Content="Custom" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="PrepCheckBox" Content="Prep" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="ZeppelinCheckBox" Content="Zeppelin" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="GlobalSiteCheckBox" Content="Global Site" IsChecked="True" Margin="0,2"/>
+                <Separator Margin="0,10,0,10"/>
+                <CheckBox
+                Name="OptionalCheckBox"
+                Content="Show Optional"/>
+            
         </StackPanel>
 
         <DockPanel Grid.Column="1">
 
-            <TextBox
-                Name="SearchBox"
-                Height="25"
-                Margin="0,0,0,10"
-                DockPanel.Dock="Top"/>
+            <StackPanel
+                Orientation="Vertical"
+                DockPanel.Dock="Top"
+                Margin="0,0,0,10">
 
-            <ListBox
-                Name="ApplicationList"/>
+                <TextBlock
+                    Text="Search"
+                    FontWeight="Bold"
+                    Margin="0,0,0,2"/>
+
+                <TextBox
+                    Name="SearchBox"
+                    Height="25"/>
+
+            </StackPanel>
+
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ListBox
+                    Grid.Row="0"
+                    Name="ApplicationList">
+
+                    <ListBox.ItemTemplate>
+
+                        <DataTemplate>
+
+                            <CheckBox
+                                Content="{Binding Name}"
+                                IsChecked="{Binding Selected}"
+                                Margin="2"
+                            />
+
+                        </DataTemplate>
+
+                    </ListBox.ItemTemplate>
+
+                </ListBox>
+
+            </Grid>
 
         </DockPanel>
 
