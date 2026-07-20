@@ -61,8 +61,6 @@ function Get-FilteredApplications {
             Where-Object {
                 $_.Optional
             }
-
-        #Write-Host "Remaining Apps:" $filteredApps.Count
     }
 
     return @($filteredApps)
@@ -86,7 +84,6 @@ function Update-FilteredApplicationList {
 . "$PSScriptRoot\..\Catalogs\CatalogService.ps1"
 . "$PSScriptRoot\..\Models\ApplicationViewModel.ps1"
 
-write-host "Loading MainWindow.ps1"
 Add-Type -AssemblyName PresentationFramework
 
 [xml]$xaml =
@@ -153,6 +150,7 @@ $deployableApps =
         $viewModel
     }
 
+    <#
     Write-Host ""
     Write-Host "Total Applications:" $script:AllApplications.Count
 
@@ -160,6 +158,7 @@ $deployableApps =
         $script:AllApplications |
         Where-Object { $_.Optional }
     ).Count
+    #>
 
 Update-ApplicationList $script:AllApplications
 
