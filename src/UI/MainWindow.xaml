@@ -20,13 +20,13 @@
                 Margin="0,0,0,10"/>
 
 
-                <CheckBox Name="BasicCheckBox" Content="Basic" Margin="0,2"/>
-                <CheckBox Name="OptionCheckBox" Content="Option" Margin="0,2"/>
-                <CheckBox Name="SiteCheckBox" Content="Site" Margin="0,2"/>
-                <CheckBox Name="CustomCheckBox" Content="Custom" Margin="0,2"/>
-                <CheckBox Name="PrepCheckBox" Content="Prep" Margin="0,2"/>
-                <CheckBox Name="ZeppelinCheckBox" Content="Zeppelin" Margin="0,2"/>
-                <CheckBox Name="GlobalSiteCheckBox" Content="Global Site" Margin="0,2"/>
+                <CheckBox Name="BasicCheckBox" Content="Basic" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="OptionCheckBox" Content="Option" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="SiteCheckBox" Content="Site" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="CustomCheckBox" Content="Custom" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="PrepCheckBox" Content="Prep" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="ZeppelinCheckBox" Content="Zeppelin" IsChecked="True" Margin="0,2"/>
+                <CheckBox Name="GlobalSiteCheckBox" Content="Global Site" IsChecked="True" Margin="0,2"/>
                 <Separator Margin="0,10,0,10"/>
                 <CheckBox
                 Name="OptionalCheckBox"

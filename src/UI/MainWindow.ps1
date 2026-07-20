@@ -68,7 +68,7 @@ function Get-FilteredApplications {
     return @($filteredApps)
 }
 
-function Update-FilterdApplicationList {
+function Update-FilteredApplicationList {
 
     $filteredApps = Get-FilteredApplications
 
@@ -179,7 +179,9 @@ $optionalCheckBox.Add_Click($filterHandler)
 
 $searchBox.Add_TextChanged({
 
-    Update-FilterdApplicationList
+    Update-FilteredApplicationList
 })
+
+Update-FilteredApplicationList
 
 $window.ShowDialog()
