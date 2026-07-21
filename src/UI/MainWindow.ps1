@@ -140,6 +140,7 @@ $applicationList =
     $searchBox = $window.FindName("SearchBox")
     $profileComboBox = $window.FindName("ProfileComboBox")
     $basicCheckBox = $window.FindName("BasicCheckBox")
+    $optionCheckBox = $window.FindName("OptionCheckBox")
     $optionalCheckBox = $window.FindName("OptionalCheckBox")
     $showSelectedCheckBox = $window.FindName("ShowSelectedCheckBox")
     $siteCheckBox = $window.FindName("SiteCheckBox")
@@ -189,10 +190,6 @@ $deployableApps =
     }
 
 Load-ProfileSelection -ProfileName "Default"
-
-Select-ProfileApplications `
-    -Applications $script:AllApplications `
-    -SelectedApplicationNames $selectedApplicationNames
 
 Update-ApplicationList $script:AllApplications
 
