@@ -8,6 +8,14 @@ class ApplicationViewModel {
 
     [bool]$Optional
 
+    [string]$Directory
+
+    [string]$MachineExe
+
+    [string]$UserExe
+
+    [bool]$Reboot
+
     ApplicationViewModel() {
 
         $this.Selected = $false
