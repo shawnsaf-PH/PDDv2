@@ -82,3 +82,56 @@ if ($application.Name -in $SelectedApplicationNames) {
         }
     }
 }
+
+function Write-Profile {
+
+    param(
+        [Parameter(Mandatory)]
+        [string]$ProfilePath,
+
+        [Parameter(Mandatory)]
+        [array]$Applications
+    )
+
+    $lines = @()
+
+    $lines += "[MAIN]"
+
+    $Applications |
+        Where-Object { $_.Selected } |
+        Sort-Object Name |
+        ForEach-Object {
+
+            $lines += "$($_.Name)=TRUE"
+        }
+
+    Set-Content `
+        -Path $ProfilePath `
+        -Value $lines `
+        -Encoding UTF8
+}
+
+function New-Profile {
+
+    param(
+        [Parameter(Mandatory)]
+        [string]$ProfileDirectory,
+
+        [Parameter(Mandatory)]
+        [string]$ProfileName,
+
+        [Parameter(Mandatory)]
+        [array]$Applications
+    )
+
+    $profilePath =
+        Join-Path `
+            $ProfileDirectory `
+            "$ProfileName.ini"
+
+    Write-Profile `
+        -ProfilePath $profilePath `
+        -Applications $Applications
+
+    return $profilePath
+}
