@@ -153,6 +153,7 @@ $applicationList =
     $window.FindName("ApplicationList")
     $searchBox = $window.FindName("SearchBox")
     $profileComboBox = $window.FindName("ProfileComboBox")
+    $serialNumberTextBox = $window.FindName("SerialNumberTextBox")
     $basicCheckBox = $window.FindName("BasicCheckBox")
     $optionCheckBox = $window.FindName("OptionCheckBox")
     $optionalCheckBox = $window.FindName("OptionalCheckBox")
@@ -168,9 +169,15 @@ $applicationList =
     $saveAsButton = $window.FindName("SaveAsButton")
     $closeButton = $window.FindName("CloseButton")
 
-$script:CurrentManifest = $null
+#$script:CurrentManifest = $null
 
 $config = Get-PlatformConfiguration
+
+$serialNumber =
+    (Get-CimInstance Win32_BIOS).SerialNumber
+
+$serialNumberTextBox.Text =
+    $serialNumber.Trim()
 
 $profiles =
     Get-Profiles `
@@ -246,10 +253,26 @@ $generateButton.Add_Click({
     $script:CurrentManifest =
         $manifest
 
-    $manifestPath =
-        Join-Path `
-            $config.ConfigDirectory `
-            "Test-001.ini"
+        $serialNumber =
+    $serialNumberTextBox.Text.Trim()
+
+if ([string]::IsNullOrWhiteSpace($serialNumber)) {
+
+    [System.Windows.MessageBox]::Show(
+        "Serial Number is required.",
+        "Generate"
+    )
+
+    return
+}
+
+$fileName =
+    "$serialNumber.ini"
+
+$manifestPath =
+    Join-Path `
+        $config.ConfigDirectory `
+        $fileName
 
     Write-DeploymentManifest `
         -Manifest $manifest `
