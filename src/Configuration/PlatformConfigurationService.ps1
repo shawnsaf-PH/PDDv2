@@ -68,10 +68,6 @@ function Get-PlatformConfiguration {
 
     $config.LayoutDefault = $configData["LayoutDefault"]
     
-    Write-Host ""
-    Write-Host "Catalogs Loaded:"
-    Write-Host ($config.Catalogs -join ', ')
-    
     return $config
 }
 

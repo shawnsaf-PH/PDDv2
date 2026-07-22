@@ -128,6 +128,7 @@ function Load-ProfileSelection {
 
 #-----------Main Window Logic------------
 Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName Microsoft.VisualBasic
 
 [xml]$xaml = Get-Content "$PSScriptRoot\MainWindow.xaml" -Raw
 
@@ -169,8 +170,6 @@ $profileComboBox.SelectedItem =
     "Default"
 
 $apps = Get-AllCatalogApplications -CatalogDirectory $config.IniFilesDirectory -Catalogs $config.Catalogs
-
-write-host "Found $($apps.Count) applications in catalogs: $($config.Catalogs -join ', ')"
 
 $deployableApps =
     Get-DeployableApplications -Applications $apps
@@ -238,30 +237,71 @@ $generateButton.Add_Click({
 
 $saveButton.Add_Click({
 
-    if ($null -eq $script:CurrentManifest) {
+    if ($null -eq $profileComboBox.SelectedItem) {
 
         [System.Windows.MessageBox]::Show(
-            "Nothing has been generated yet.",
+            "No profile selected.",
             "Save"
         )
 
         return
     }
 
-    $manifestPath =
+    $profilePath =
         Join-Path `
-            $config.ConfigDirectory `
-            "SS001.ini"
+            $config.ProfileDirectory `
+            "$($profileComboBox.SelectedItem).ini"
 
-    Write-DeploymentManifest `
-        -Manifest $script:CurrentManifest `
-        -Path $manifestPath
+    Write-Profile `
+        -ProfilePath $profilePath `
+        -Applications $script:AllApplications
 
     [System.Windows.MessageBox]::Show(
-        "Manifest saved.`n`n$manifestPath",
+        "Profile saved.`n`n$profilePath",
         "Save"
     )
 })
+
+$saveAsButton.Add_Click({
+
+    $profileName =
+        [Microsoft.VisualBasic.Interaction]::InputBox(
+            "Enter profile name:",
+            "Save As",
+            ""
+        )
+
+    if ([string]::IsNullOrWhiteSpace($profileName)) {
+        return
+    }
+
+    $profilePath =
+        New-Profile `
+            -ProfileDirectory $config.ProfileDirectory `
+            -ProfileName $profileName `
+            -Applications $script:AllApplications
+
+    $profiles =
+        Get-Profiles `
+            -ProfileDirectory $config.ProfileDirectory
+
+    $profileComboBox.ItemsSource =
+        $profiles
+
+    $profileComboBox.SelectedItem =
+        $profileName
+
+    [System.Windows.MessageBox]::Show(
+        "Profile created.`n`n$profilePath",
+        "Save As"
+    )
+})
+
+$closeButton.Add_Click({
+
+    $window.Close()
+})
+
 
 $profileComboBox.Add_SelectionChanged({
 
