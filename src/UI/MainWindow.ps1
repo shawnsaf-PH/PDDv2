@@ -136,6 +136,19 @@ $reader = New-Object System.Xml.XmlNodeReader $xaml
 
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
+$iconPath =
+    Join-Path `
+        $PSScriptRoot `
+        "Images\PDDv2_PackageGear.ico"
+
+if (Test-Path $iconPath) {
+
+    $window.Icon =
+        [System.Windows.Media.Imaging.BitmapFrame]::Create(
+            [System.Uri]::new($iconPath)
+        )
+}
+
 $applicationList =
     $window.FindName("ApplicationList")
     $searchBox = $window.FindName("SearchBox")
@@ -226,11 +239,24 @@ $generateButton.Add_Click({
         return
     }
 
-    $manifest = New-DeploymentManifest -Applications $selectedApps
-    $script:CurrentManifest = $manifest
+    $manifest =
+        New-DeploymentManifest `
+            -Applications $selectedApps
+
+    $script:CurrentManifest =
+        $manifest
+
+    $manifestPath =
+        Join-Path `
+            $config.ConfigDirectory `
+            "Test-001.ini"
+
+    Write-DeploymentManifest `
+        -Manifest $manifest `
+        -Path $manifestPath
 
     [System.Windows.MessageBox]::Show(
-        "Manifest generated successfully.`n`nSteps: $($manifest.Steps.Count)",
+        "Manifest generated successfully.`n`n$manifestPath",
         "Generate"
     )
 })
