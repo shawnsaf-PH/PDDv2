@@ -17,6 +17,8 @@ function Invoke-DeploymentStep {
     $result.Executable =
         $ResolvedStep.MachineExePath
 
+    $result.Arguments = $ResolvedStep.MachineExeArguments
+
     if (-not $ResolvedStep.MachineExeExists) {
 
         $result.Success = $false

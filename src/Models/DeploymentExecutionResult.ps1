@@ -8,9 +8,12 @@ class DeploymentExecutionResult {
 
     [string]$Executable
 
+    [string]$Arguments
+    
     [datetime]$StartTime
 
     [datetime]$EndTime
 
     [double]$DurationSeconds
+
 }
