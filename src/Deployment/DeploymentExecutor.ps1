@@ -5,7 +5,7 @@ function Invoke-DeploymentStep {
 
     param(
         [Parameter(Mandatory)]
-        [ResolvedDeploymentStep]$ResolvedStep
+        [Object]$ResolvedStep
     )
 
     $result =
@@ -27,13 +27,27 @@ function Invoke-DeploymentStep {
 
     $result.StartTime = Get-Date
 
-    $process =
-        Start-Process `
-            -FilePath $ResolvedStep.MachineExePath `
-            -ArgumentList $ResolvedStep.MachineExeArguments `
-            -WorkingDirectory $ResolvedStep.ApplicationPath `
-            -Wait `
-            -PassThru
+    if ([String]::IsNullOrWhiteSpace($ResolvedStep.MachineExeArguments)) {
+
+        $process =
+            Start-Process `
+                -FilePath $ResolvedStep.MachineExePath `
+                -WorkingDirectory $ResolvedStep.ApplicationPath `
+                -Wait `
+                -PassThru
+    }
+    else {
+
+        $process =
+            Start-Process `
+                -FilePath $ResolvedStep.MachineExePath `
+                -ArgumentList $ResolvedStep.MachineExeArguments `
+                -WorkingDirectory $ResolvedStep.ApplicationPath `
+                -Wait `
+                -PassThru
+
+        Write-Host "Exit Code:" $process.ExitCode
+    }
 
     $result.EndTime = Get-Date
 

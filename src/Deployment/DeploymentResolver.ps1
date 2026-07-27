@@ -14,6 +14,15 @@ function Resolve-DeploymentStep {
     $resolved =
         [ResolvedDeploymentStep]::new()
 
+    Write-Host ""
+    Write-Host "Resolved Object Type:"
+    Write-Host $resolved.GetType().FullName
+
+    Write-Host ""
+    Write-Host "Properties:"
+
+$resolved.PSObject.Properties.Name
+
     $resolved.Step =
         $Step
 
