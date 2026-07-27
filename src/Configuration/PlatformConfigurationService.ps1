@@ -24,6 +24,33 @@ function Get-PlatformConfiguration {
 
     $config.ProfileDirectory = $configData["ProfileDIR"]
 
+    $config.Toolboxes["Basic"] =
+    $configData["BasicTOOLBOX"]
+
+    $config.Toolboxes["ChassisPatches"] =
+        $configData["ChassisPatchesTOOLBOX"]
+
+    $config.Toolboxes["Custom"] =
+        $configData["CustomTOOLBOX"]
+
+    $config.Toolboxes["Language"] =
+        $configData["LanguageTOOLBOX"]
+
+    $config.Toolboxes["Option"] =
+        $configData["OptionTOOLBOX"]
+
+    $config.Toolboxes["Prep"] =
+        $configData["PrepTOOLBOX"]
+
+    $config.Toolboxes["Site"] =
+        $configData["SiteTOOLBOX"]
+
+    $config.Toolboxes["GlobalSite"] =
+        $configData["GlobalSiteTOOLBOX"]
+
+    $config.Toolboxes["Zeppelin"] =
+        $configData["ZeppelinTOOLBOX"]
+
     $config.Catalogs = @()
 
     $config.Catalogs += $configData["OS"]

@@ -173,6 +173,11 @@ $applicationList =
 
 $config = Get-PlatformConfiguration
 
+if ($config.IniFilesDirectory -match "USDBTLBCA1MS1IT") {
+
+    $saveButton.IsEnabled = $false
+}
+
 $serialNumber =
     (Get-CimInstance Win32_BIOS).SerialNumber
 
