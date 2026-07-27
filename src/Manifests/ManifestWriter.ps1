@@ -16,15 +16,16 @@ function Write-DeploymentManifest {
     $lines += "Steps=$($Manifest.Steps.Count)"
     $lines += ""
 
-    foreach ($step in $Manifest.Steps) {
+foreach ($step in $Manifest.Steps) {
 
-        $lines += "[$($step.StepNumber)]"
-        $lines += "Name=$($step.Name)"
-        $lines += "MachineEXE=$($step.MachineExe)"
-        $lines += "UserEXE=$($step.UserExe)"
-        $lines += "Reboot=$($step.Reboot)"
-        $lines += ""
-    }
+    $lines += "[$($step.StepNumber)]"
+    $lines += "Name=$($step.Name)"
+    $lines += "Directory=$($step.Directory)"
+    $lines += "MachineEXE=$($step.MachineExe)"
+    $lines += "UserEXE=$($step.UserExe)"
+    $lines += "Reboot=$($step.Reboot)"
+    $lines += ""
+}
 
     Set-Content `
         -Path $Path `
