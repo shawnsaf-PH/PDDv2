@@ -8,7 +8,7 @@ $config =
 
 $manifest =
     Read-DeploymentManifest `
-        -Path "\\USDBTLBCA1MSH20\pdd$\Config\SD016P49.ini"
+        -Path "\\USDBTLBCA1MSH20\pdd$\Config\PF6BVBW1.ini"
 
 $step =
     $manifest.Steps[0]
@@ -19,6 +19,12 @@ $resolved =
         -Configuration $config
 
 $resolved | Format-List
+
+$result =
+    Invoke-DeploymentStep `
+        -ResolvedStep $resolved
+
+$result | Format-List
 
 Write-Host ""
 Write-Host "READY FOR EXECUTION TEST"

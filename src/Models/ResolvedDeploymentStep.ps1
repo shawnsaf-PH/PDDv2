@@ -8,9 +8,14 @@ class ResolvedDeploymentStep {
 
     [string]$UserExePath
 
+    [string]$MachineExeArguments
+
+    [string]$UserExeArguments
+    
     [bool]$ApplicationPathExists
 
     [bool]$MachineExeExists
 
     [bool]$UserExeExists
+
 }

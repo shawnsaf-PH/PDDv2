@@ -30,6 +30,7 @@ function Invoke-DeploymentStep {
     $process =
         Start-Process `
             -FilePath $ResolvedStep.MachineExePath `
+            -ArgumentList $ResolvedStep.MachineExeArguments `
             -WorkingDirectory $ResolvedStep.ApplicationPath `
             -Wait `
             -PassThru
