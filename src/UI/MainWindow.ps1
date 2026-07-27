@@ -50,6 +50,10 @@ function Get-FilteredApplications {
         $selectedDepartments += "GLOBALSITE"
     }
 
+    if ($chassisPatchesCheckBox.IsChecked) {
+        $selectedDepartments += "CHASSISPATCHES"
+    }
+
     $filteredApps = $script:AllApplications
 
     if ($selectedDepartments.Count -gt 0) {
@@ -104,7 +108,7 @@ function Get-SelectedApplications {
     )
 }
 
-function Load-ProfileSelection {
+function Set-ProfileSelection {
 
     param(
         [string]$ProfileName
@@ -151,6 +155,34 @@ if (Test-Path $iconPath) {
 
 $applicationList =
     $window.FindName("ApplicationList")
+    $applicationList.AddHandler(
+    [System.Windows.Controls.CheckBox]::ClickEvent,
+    [System.Windows.RoutedEventHandler]{
+
+        param($sender, $eventArgs)
+
+        Write-Host "CHECKBOX CLICKED"
+
+        $checkBox =
+            $eventArgs.OriginalSource
+
+        if ($checkBox -isnot [System.Windows.Controls.CheckBox]) {
+            return
+        }
+
+        $application =
+            $checkBox.DataContext
+
+        if ($null -eq $application) {
+            return
+        }
+
+        $application.Selected =
+            [bool]$checkBox.IsChecked
+
+        Write-Host "Changed:" $application.Name "->" $application.Selected
+    }
+)
     $searchBox = $window.FindName("SearchBox")
     $profileComboBox = $window.FindName("ProfileComboBox")
     $serialNumberTextBox = $window.FindName("SerialNumberTextBox")
@@ -163,6 +195,7 @@ $applicationList =
     $prepCheckBox = $window.FindName("PrepCheckBox")
     $zeppelinCheckBox = $window.FindName("ZeppelinCheckBox")
     $globalSiteCheckBox = $window.FindName("GlobalSiteCheckBox")
+    $chassisPatchesCheckBox = $window.FindName("ChassisPatchesCheckBox")
     $optionalCheckBox = $window.FindName("OptionalCheckBox")
     $generateButton = $window.FindName("GenerateButton")
     $saveButton = $window.FindName("SaveButton")
@@ -213,9 +246,34 @@ $deployableApps =
         $viewModel
     }
 
-Load-ProfileSelection -ProfileName "Default"
+Set-ProfileSelection -ProfileName "Default"
 
 Update-ApplicationList $script:AllApplications
+
+$applicationList.AddHandler(
+    [System.Windows.Controls.CheckBox]::ClickEvent,
+    [System.Windows.RoutedEventHandler]{
+
+        param($sender,$eventArgs)
+
+        $checkBox =
+            $eventArgs.OriginalSource
+
+        if ($checkBox -isnot [System.Windows.Controls.CheckBox]) {
+            return
+        }
+
+        $application =
+            $checkBox.DataContext
+
+        if ($null -eq $application) {
+            return
+        }
+
+        $application.Selected =
+            [bool]$checkBox.IsChecked
+    }
+)
 
 $filterHandler = {
 
@@ -238,8 +296,44 @@ $searchBox.Add_TextChanged({
 
 $generateButton.Add_Click({
 
+    $script:AllApplications |
+    Where-Object {
+        $_.Name -in @(
+            'Microsoft .NET Runtime 6.0.3',
+            'Microsoft ASP.NET Core 6.0.3',
+            'Microsoft .NET Runtime 8.0.5',
+            'Microsoft ASP.NET Core 8.0.5',
+            'Adobe_Reader_25.001.20693'
+        )
+    } |
+    Format-Table Name, Selected
+
     $selectedApps =
         Get-SelectedApplications
+
+    $script:AllApplications |
+        Where-Object {
+            $_.Name -match "Adobe|ASP.NET|\\.NET"
+        } |
+        Format-Table Name, Selected
+
+    Write-Host ""
+    Write-Host "Selected App Count:" $selectedApps.Count
+    Write-Host ""
+
+    $script:AllApplications |
+    Where-Object {
+        $_.Name -like "*Adobe*" -or
+        $_.Name -like "*.NET*" -or
+        $_.Name -like "*ASP.NET*"
+    } |
+    Select-Object Name, Selected |
+    Format-Table
+
+    foreach ($app in $selectedApps) {
+
+        Write-Host $app.Name
+    }
 
     if ($selectedApps.Count -eq 0) {
 
@@ -261,23 +355,23 @@ $generateButton.Add_Click({
         $serialNumber =
     $serialNumberTextBox.Text.Trim()
 
-if ([string]::IsNullOrWhiteSpace($serialNumber)) {
+    if ([string]::IsNullOrWhiteSpace($serialNumber)) {
 
-    [System.Windows.MessageBox]::Show(
-        "Serial Number is required.",
-        "Generate"
-    )
+        [System.Windows.MessageBox]::Show(
+            "Serial Number is required.",
+            "Generate"
+        )
 
-    return
-}
+        return
+    }
 
-$fileName =
-    "$serialNumber.ini"
+    $fileName =
+        "$serialNumber.ini"
 
-$manifestPath =
-    Join-Path `
-        $config.ConfigDirectory `
-        $fileName
+    $manifestPath =
+        Join-Path `
+            $config.ConfigDirectory `
+            $fileName
 
     Write-DeploymentManifest `
         -Manifest $manifest `
@@ -363,7 +457,7 @@ $profileComboBox.Add_SelectionChanged({
         return
     }
 
-    Load-ProfileSelection `
+    Set-ProfileSelection `
         -ProfileName $profileComboBox.SelectedItem
 })
 

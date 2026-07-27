@@ -17,7 +17,7 @@
         <StackPanel Grid.Column="0">
 
             <TextBlock
-                Text="Serial Number or Custom Name"
+                Text="Computer Name"
                 FontWeight="Bold"
                 Margin="0,0,0,2"/>
 
@@ -38,6 +38,7 @@
             <CheckBox Name="CustomCheckBox" Content="Custom" IsChecked="True" Margin="0,2"/>
             <CheckBox Name="PrepCheckBox" Content="Prep" IsChecked="True" Margin="0,2"/>
             <CheckBox Name="ZeppelinCheckBox" Content="Zeppelin" IsChecked="True" Margin="0,2"/>
+            <CheckBox Name="ChassisPatchesCheckBox" Content="Chassis Patches" IsChecked="True" Margin="0,2"/>
             <CheckBox Name="GlobalSiteCheckBox" Content="Global Site" IsChecked="True" Margin="0,2"/>
 
             <Separator Margin="0,10,0,10"/>
@@ -98,8 +99,9 @@
                         <DataTemplate>
 
                             <CheckBox
+                                Name="ApplicationCheckBox"
                                 Content="{Binding Name}"
-                                IsChecked="{Binding Selected}"
+                                IsChecked="{Binding Selected, Mode=TwoWay}"
                                 Margin="2"/>
 
                         </DataTemplate>
