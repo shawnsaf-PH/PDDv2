@@ -40,8 +40,17 @@ function Resolve-DeploymentStep {
 
         if (-not [string]::IsNullOrWhiteSpace($Step.MachineExe)) {
 
+            $machineParts =
+                $Step.MachineExe.Split(' ', 2)
+
             $machineExe =
-                ($Step.MachineExe.Split(' ')[0])
+                $machineParts[0]
+
+            if ($machineParts.Count -gt 1) {
+
+                $resolved.MachineExeArguments =
+                    $machineParts[1]
+            }
 
             $resolved.MachineExePath =
                 Join-Path `
@@ -54,8 +63,17 @@ function Resolve-DeploymentStep {
 
         if (-not [string]::IsNullOrWhiteSpace($Step.UserExe)) {
 
+            $userParts =
+            $Step.UserExe.Split(' ', 2)
+
             $userExe =
-                ($Step.UserExe.Split(' ')[0])
+            $userParts[0]
+
+            if ($userParts.Count -gt 1) {
+
+                $resolved.UserExeArguments =
+                $userParts[1]
+            }
 
             $resolved.UserExePath =
                 Join-Path `
