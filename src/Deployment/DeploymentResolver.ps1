@@ -19,7 +19,17 @@ function Resolve-DeploymentStep {
     $resolved.Step =
         $Step
 
-    if ($Configuration.Toolboxes.ContainsKey($Step.Department)) {
+    if ([string]::IsNullOrWhiteSpace($Step.Department)) {
+
+        Write-Host ""
+        Write-Host "WARNING: Department is null for:"
+        Write-Host $Step.Name
+    }
+
+    if (
+        -not [string]::IsNullOrWhiteSpace($Step.Department) -and
+        $Configuration.Toolboxes.ContainsKey($Step.Department)
+    ) {
 
         $applicationPath =
             Join-Path `
