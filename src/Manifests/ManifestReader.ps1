@@ -80,6 +80,10 @@ function Read-DeploymentManifest {
                 $currentStep.Reboot =
                     [System.Convert]::ToBoolean($value)
             }
+
+            "Department" {
+                $currentStep.Department = $value
+            }
         }
     }
 

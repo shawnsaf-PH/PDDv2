@@ -24,6 +24,7 @@ foreach ($step in $Manifest.Steps) {
     $lines += "MachineEXE=$($step.MachineExe)"
     $lines += "UserEXE=$($step.UserExe)"
     $lines += "Reboot=$($step.Reboot)"
+    $lines += "Department=$($step.Department)"
     $lines += ""
 }
 
