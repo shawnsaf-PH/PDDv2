@@ -5,6 +5,10 @@
 . "$PSScriptRoot\..\Manifests\ManifestService.ps1"
 . "$PSScriptRoot\..\Manifests\ManifestWriter.ps1"
 . "$PSScriptRoot\..\Profiles\ProfileService.ps1"
+. "$PSScriptRoot\..\Deployment\DeploymentValidation.ps1"
+. "$PSScriptRoot\..\Deployment\ManifestExecutor.ps1"
+. "$PSScriptRoot\DeploymentProgressWindow.ps1"
+. "$PSScriptRoot\DeploymentSummaryWindow.ps1"
 
 #-----------Functions------------
 function Update-ApplicationList {
@@ -161,8 +165,6 @@ $applicationList =
 
         param($sender, $eventArgs)
 
-        Write-Host "CHECKBOX CLICKED"
-
         $checkBox =
             $eventArgs.OriginalSource
 
@@ -179,8 +181,6 @@ $applicationList =
 
         $application.Selected =
             [bool]$checkBox.IsChecked
-
-        Write-Host "Changed:" $application.Name "->" $application.Selected
     }
 )
     $searchBox = $window.FindName("SearchBox")
@@ -250,31 +250,6 @@ Set-ProfileSelection -ProfileName "Default"
 
 Update-ApplicationList $script:AllApplications
 
-$applicationList.AddHandler(
-    [System.Windows.Controls.CheckBox]::ClickEvent,
-    [System.Windows.RoutedEventHandler]{
-
-        param($sender,$eventArgs)
-
-        $checkBox =
-            $eventArgs.OriginalSource
-
-        if ($checkBox -isnot [System.Windows.Controls.CheckBox]) {
-            return
-        }
-
-        $application =
-            $checkBox.DataContext
-
-        if ($null -eq $application) {
-            return
-        }
-
-        $application.Selected =
-            [bool]$checkBox.IsChecked
-    }
-)
-
 $filterHandler = {
 
     Update-FilteredApplicationList
@@ -296,44 +271,7 @@ $searchBox.Add_TextChanged({
 
 $generateButton.Add_Click({
 
-    $script:AllApplications |
-    Where-Object {
-        $_.Name -in @(
-            'Microsoft .NET Runtime 6.0.3',
-            'Microsoft ASP.NET Core 6.0.3',
-            'Microsoft .NET Runtime 8.0.5',
-            'Microsoft ASP.NET Core 8.0.5',
-            'Adobe_Reader_25.001.20693'
-        )
-    } |
-    Format-Table Name, Selected
-
-    $selectedApps =
-        Get-SelectedApplications
-
-    $script:AllApplications |
-        Where-Object {
-            $_.Name -match "Adobe|ASP.NET|\\.NET"
-        } |
-        Format-Table Name, Selected
-
-    Write-Host ""
-    Write-Host "Selected App Count:" $selectedApps.Count
-    Write-Host ""
-
-    $script:AllApplications |
-    Where-Object {
-        $_.Name -like "*Adobe*" -or
-        $_.Name -like "*.NET*" -or
-        $_.Name -like "*ASP.NET*"
-    } |
-    Select-Object Name, Selected |
-    Format-Table
-
-    foreach ($app in $selectedApps) {
-
-        Write-Host $app.Name
-    }
+    $selectedApps = Get-SelectedApplications
 
     if ($selectedApps.Count -eq 0) {
 
@@ -345,15 +283,27 @@ $generateButton.Add_Click({
         return
     }
 
-    $manifest =
-        New-DeploymentManifest `
-            -Applications $selectedApps
+    $manifest = New-DeploymentManifest -Applications $selectedApps
 
-    $script:CurrentManifest =
-        $manifest
+    $validationResults = Test-DeploymentManifest -Manifest $manifest -Configuration $config
 
-        $serialNumber =
-    $serialNumberTextBox.Text.Trim()
+    $failedResults = $validationResults | Where-Object {-not $_.Valid}
+
+    if ($failedResults.Count -gt 0) {
+
+        Write-Host ""
+        Write-Host "Validation Warnings"
+
+        $failedResults |
+            ForEach-Object {
+
+                Write-Host "$($_.ApplicationName) - $($_.Message)"
+            }
+    }
+
+    $script:CurrentManifest = $manifest
+
+    $serialNumber = $serialNumberTextBox.Text.Trim()
 
     if ([string]::IsNullOrWhiteSpace($serialNumber)) {
 
@@ -377,10 +327,103 @@ $generateButton.Add_Click({
         -Manifest $manifest `
         -Path $manifestPath
 
-    [System.Windows.MessageBox]::Show(
-        "Manifest generated successfully.`n`n$manifestPath",
-        "Generate"
-    )
+    $progressWindow = New-DeploymentProgressWindow
+
+    $progressWindow.Show()
+    
+    $executionResults = Invoke-DeploymentManifest -Manifest $manifest -Configuration $config -ProgressWindow $progressWindow
+
+    $progressWindow.Close()
+
+    $successfulCount =
+    ($executionResults |
+        Where-Object {
+            $_.Success
+        }).Count
+
+    $failedResults =
+        $executionResults |
+        Where-Object {
+            -not $_.Success
+        }
+
+    $failedCount = $failedResults.Count
+
+    $totalCount =
+    $executionResults.Count
+
+    $summaryWindow =
+        New-DeploymentSummaryWindow
+
+    $summaryHeaderTextBlock =
+        $summaryWindow.FindName(
+            "SummaryHeaderTextBlock"
+        )
+
+    $summaryTextBox =
+        $summaryWindow.FindName(
+            "SummaryTextBox"
+        )
+    
+    $openLogButton =
+        $summaryWindow.FindName(
+            "OpenLogButton"
+        )
+
+    $closeButton =
+        $summaryWindow.FindName(
+            "CloseButton"
+        )
+
+    $summaryHeaderTextBlock.Text =
+        "Deployment Complete"
+
+    $failureList =
+        $failedResults |
+        ForEach-Object {
+
+@"
+$($_.ApplicationName)
+Reason: $($_.FailureReason)
+"@
+        }
+
+$summary =
+@"
+Total Applications : $totalCount
+
+Successful         : $successfulCount
+
+Failed             : $failedCount
+
+Failed Applications:
+
+$($failureList -join "`r`n`r`n")
+"@
+
+    $summaryTextBox.Text =
+        $summary
+
+    $closeButton.Add_Click({
+
+        $summaryWindow.Close()
+    })
+
+    $logPath =
+        Join-Path `
+            $config.LogDirectory `
+            "PDDv2-Deployment.log"
+
+    $openLogButton.Add_Click({
+
+        if (Test-Path $logPath) {
+
+            Invoke-Item $logPath
+        }
+    })
+
+    $summaryWindow.ShowDialog() | Out-Null
+
 })
 
 $saveButton.Add_Click({
