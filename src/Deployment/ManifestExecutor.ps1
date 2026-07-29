@@ -41,6 +41,8 @@ function Invoke-DeploymentManifest {
                 $step.Name
 
             $result.Success = $false
+            
+            $result.RebootRequired = $false
 
             $result.ExitCode = -1
 
@@ -74,6 +76,8 @@ function Invoke-DeploymentManifest {
 
             $result.Success =
                 $false
+
+            $result.RebootRequired = $false
 
             $result.ExitCode =
                 -2
@@ -150,6 +154,8 @@ function Invoke-DeploymentManifest {
 
             $result.Success =
                 $false
+
+            $result.RebootRequired = $false
 
             $result.ExitCode =
                 -999
