@@ -331,7 +331,7 @@ $generateButton.Add_Click({
 
     $progressWindow.Show()
     
-    $executionResults = Invoke-DeploymentManifest -Manifest $manifest -Configuration $config -ProgressWindow $progressWindow
+    $executionResults = Invoke-DeploymentManifest -Manifest $manifest -Configuration $config -SerialNumber $serialNumber -ProgressWindow $progressWindow
 
     $progressWindow.Close()
 
@@ -412,7 +412,7 @@ $($failureList -join "`r`n`r`n")
     $logPath =
         Join-Path `
             $config.LogDirectory `
-            "PDDv2-Deployment.log"
+            "$serialNumber.log"
 
     $openLogButton.Add_Click({
 
