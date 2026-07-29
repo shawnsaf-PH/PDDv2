@@ -1,6 +1,7 @@
 . "$PSScriptRoot\DeploymentResolver.ps1"
 . "$PSScriptRoot\DeploymentExecutor.ps1"
 . "$PSScriptRoot\DeploymentLogger.ps1"
+. "$PSScriptRoot\..\Models\DeploymentExecutionResult.ps1"
 
 function Invoke-DeploymentManifest {
 
@@ -9,15 +10,17 @@ function Invoke-DeploymentManifest {
         [object]$Manifest,
 
         [Parameter(Mandatory)]
-        [object]$Configuration
+        [object]$Configuration,
+
+        [Parameter(Mandatory)]
+        [object]$ProgressWindow
     )
 
     $results = @()
 
-    foreach ($step in $Manifest.Steps) {
+    $failedApplications = @()
 
-        Write-Host ""
-        Write-Host "Executing:" $step.Name
+    foreach ($step in $Manifest.Steps) {
 
         $resolved =
             Resolve-DeploymentStep `
@@ -26,17 +29,97 @@ function Invoke-DeploymentManifest {
 
         if (-not $resolved.ApplicationPathExists) {
 
-            Write-Warning "Application path not found: $($step.Name)"
+            $failedApplications +=
+                "$($step.Name) - Application path not found"
+
+            $result =
+                [DeploymentExecutionResult]::new()
+
+            $result.ApplicationName =
+                $step.Name
+
+            $result.Success = $false
+
+            $result.ExitCode = -1
+
+            $result.Executable =
+                "Application Path Not Found"
+
+            $result.FailureReason =
+                "Application path not found"
+
+            $results += $result
+
+            Write-DeploymentLog `
+                -Result $result `
+                -Configuration $Configuration
+
             continue
         }
 
         if (-not $resolved.MachineExeExists) {
 
-            Write-Warning "Machine executable not found: $($step.Name)"
+            $failedApplications +=
+                "$($step.Name) - Machine executable not found"
+
+            $result =
+                [DeploymentExecutionResult]::new()
+
+            $result.ApplicationName =
+                $step.Name
+
+            $result.Success =
+                $false
+
+            $result.ExitCode =
+                -2
+
+            $result.Executable =
+                $resolved.MachineExePath
+
+            $result.Arguments =
+                $resolved.MachineExeArguments
+
+            $result.FailureReason =
+                "Machine executable not found"
+
+            $results +=
+                $result
+
+            Write-DeploymentLog `
+                -Result $result `
+                -Configuration $Configuration
+
             continue
         }
 
         try {
+
+            if ($null -ne $ProgressWindow) {
+
+                $currentTextBlock =
+                    $ProgressWindow.FindName(
+                        "CurrentApplicationTextBlock"
+                    )
+
+                $progressTextBlock =
+                    $ProgressWindow.FindName(
+                        "ProgressTextBlock"
+                    )
+
+                $currentTextBlock.Text =
+                    $step.Name
+
+                $progressTextBlock.Text =
+                    "$($results.Count + 1) of $($Manifest.Steps.Count)"
+
+                $ProgressWindow.Dispatcher.Invoke(
+                    [Action]{}
+                )
+            }
+
+            Write-Host ""
+            Write-Host "Executing:" $step.Name
 
             $result =
                 Invoke-DeploymentStep `
@@ -50,11 +133,40 @@ function Invoke-DeploymentManifest {
         }
         catch {
 
-            Write-Warning $_
+            $failedApplications +=
+                "$($step.Name) - $($_.Exception.Message)"
+
+            $result =
+                [DeploymentExecutionResult]::new()
+
+            $result.ApplicationName =
+                $step.Name
+
+            $result.Success =
+                $false
+
+            $result.ExitCode =
+                -999
+
+            $result.Executable =
+                $resolved.MachineExePath
+
+            $result.Arguments =
+                $resolved.MachineExeArguments
+
+            $result.FailureReason =
+                $_.Exception.Message
+
+            $results +=
+                $result
+
+            Write-DeploymentLog `
+                -Result $result `
+                -Configuration $Configuration
 
             continue
         }
     }
-
+    
     return $results
 }
