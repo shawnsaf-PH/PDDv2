@@ -40,6 +40,8 @@ function Invoke-DeploymentStep {
     }
     else {
 
+        Write-Host "Starting Process..."
+
         $process =
             Start-Process `
                 -FilePath $ResolvedStep.MachineExePath `
@@ -48,6 +50,7 @@ function Invoke-DeploymentStep {
                 -Wait `
                 -PassThru
 
+        Write-Host "Process Returned"
         Write-Host "Exit Code:" $process.ExitCode
     }
 
