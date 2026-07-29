@@ -349,6 +349,12 @@ $generateButton.Add_Click({
 
     $failedCount = $failedResults.Count
 
+    $rebootRequired =
+    ($executionResults |
+        Where-Object {
+            $_.RebootRequired
+        }).Count -gt 0
+
     $totalCount =
     $executionResults.Count
 
@@ -395,6 +401,8 @@ Total Applications : $totalCount
 Successful         : $successfulCount
 
 Failed             : $failedCount
+
+Reboot Required    : $rebootRequired
 
 Failed Applications:
 
