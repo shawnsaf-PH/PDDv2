@@ -14,16 +14,16 @@ function Resolve-DeploymentStep {
     $resolved =
         [ResolvedDeploymentStep]::new()
 
-$resolved.PSObject.Properties.Name
+    $resolved.PSObject.Properties.Name
 
     $resolved.Step =
         $Step
 
-    foreach ($toolbox in $Configuration.Toolboxes.Values) {
+    if ($Configuration.Toolboxes.ContainsKey($Step.Department)) {
 
         $applicationPath =
             Join-Path `
-                $toolbox `
+                $Configuration.Toolboxes[$Step.Department] `
                 $Step.Directory
 
         if (Test-Path $applicationPath) {
@@ -33,8 +33,27 @@ $resolved.PSObject.Properties.Name
 
             $resolved.ApplicationPathExists =
                 $true
+        }
+    }
 
-            break
+    if (-not $resolved.ApplicationPathExists) {
+        foreach ($toolbox in $Configuration.Toolboxes.Values) {
+
+            $applicationPath =
+                Join-Path `
+                    $toolbox `
+                    $Step.Directory
+
+            if (Test-Path $applicationPath) {
+
+                $resolved.ApplicationPath =
+                    $applicationPath
+
+                $resolved.ApplicationPathExists =
+                    $true
+
+                break
+            }
         }
     }
 
