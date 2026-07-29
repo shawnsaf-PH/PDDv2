@@ -12,4 +12,6 @@ class DeploymentStep {
 
     [bool]$Reboot
 
+    [string]$Department
+
 }
