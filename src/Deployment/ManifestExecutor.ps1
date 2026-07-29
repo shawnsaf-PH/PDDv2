@@ -6,13 +6,15 @@
 function Invoke-DeploymentManifest {
 
     param(
+
         [Parameter(Mandatory)]
         [object]$Manifest,
 
         [Parameter(Mandatory)]
         [object]$Configuration,
 
-        [Parameter(Mandatory)]
+        [string]$SerialNumber,
+
         [object]$ProgressWindow
     )
 
@@ -52,7 +54,9 @@ function Invoke-DeploymentManifest {
 
             Write-DeploymentLog `
                 -Result $result `
-                -Configuration $Configuration
+                -Configuration $Configuration `
+                -SerialNumber $SerialNumber
+
 
             continue
         }
@@ -88,7 +92,8 @@ function Invoke-DeploymentManifest {
 
             Write-DeploymentLog `
                 -Result $result `
-                -Configuration $Configuration
+                -Configuration $Configuration `
+                -SerialNumber $SerialNumber
 
             continue
         }
@@ -127,7 +132,8 @@ function Invoke-DeploymentManifest {
 
             Write-DeploymentLog `
                 -Result $result `
-                -Configuration $Configuration
+                -Configuration $Configuration `
+                -SerialNumber $SerialNumber
 
             $results += $result
         }
@@ -162,7 +168,8 @@ function Invoke-DeploymentManifest {
 
             Write-DeploymentLog `
                 -Result $result `
-                -Configuration $Configuration
+                -Configuration $Configuration `
+                -SerialNumber $SerialNumber
 
             continue
         }

@@ -5,13 +5,16 @@ function Write-DeploymentLog {
         [object]$Result,
 
         [Parameter(Mandatory)]
-        [object]$Configuration
+        [object]$Configuration,
+
+        [Parameter(Mandatory)]
+        [string]$SerialNumber
     )
 
     $logPath =
         Join-Path `
             $Configuration.LogDirectory `
-            "PDDv2-Deployment.log"
+            "$SerialNumber.log"
 
     $lines = @()
 
