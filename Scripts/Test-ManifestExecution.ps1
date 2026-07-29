@@ -7,7 +7,7 @@ $config =
 
 $manifest =
     Read-DeploymentManifest `
-        -Path "\\USDBTLBCA1MSH20\pdd$\Config\PF6BVBW1.ini"
+        -Path "\\USDBTLBCA1MSH20\pdd$\Config\SD016P49.ini"
 
 $manifest.Steps =
     @(

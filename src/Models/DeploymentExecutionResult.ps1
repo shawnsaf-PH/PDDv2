@@ -10,6 +10,8 @@ class DeploymentExecutionResult {
 
     [string]$Arguments
     
+    [string]$FailureReason
+    
     [datetime]$StartTime
 
     [datetime]$EndTime
