@@ -23,6 +23,7 @@ function New-DeploymentManifest {
         $step.MachineExe = $application.MachineExe
         $step.UserExe = $application.UserExe
         $step.Reboot = $application.Reboot
+        $step.Department = $application.Department
 
         $manifest.Steps += $step
 
