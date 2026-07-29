@@ -62,5 +62,11 @@ function Invoke-DeploymentStep {
     $result.Success =
         ($process.ExitCode -eq 0)
 
+    $result.RebootRequired =
+        $ResolvedStep.Step.Reboot
+
+    $result.RebootRequired =
+        $ResolvedStep.Step.Reboot
+
     return $result
 }
