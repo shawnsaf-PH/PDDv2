@@ -27,6 +27,10 @@ function Invoke-DeploymentStep {
         return $result
     }
 
+    Write-Host ""
+    Write-Host "Invoke-DeploymentStep:"
+    Write-Host $ResolvedStep.Step.Name
+    
     $result.StartTime = Get-Date
 
     if ([String]::IsNullOrWhiteSpace($ResolvedStep.MachineExeArguments)) {
@@ -71,5 +75,8 @@ function Invoke-DeploymentStep {
     $result.RebootRequired =
         $ResolvedStep.Step.Reboot
 
+    Write-Host "Invoke-DeploymentStep Complete:"
+    Write-Host $ResolvedStep.Step.Name
+    
     return $result
 }

@@ -2,6 +2,8 @@
 . "$PSScriptRoot\DeploymentExecutor.ps1"
 . "$PSScriptRoot\DeploymentLogger.ps1"
 . "$PSScriptRoot\..\Models\DeploymentExecutionResult.ps1"
+. "$PSScriptRoot\DeploymentStateService.ps1"
+. "$PSScriptRoot\..\Models\DeploymentState.ps1"
 
 function Invoke-DeploymentManifest {
 
@@ -54,6 +56,12 @@ function Invoke-DeploymentManifest {
 
             $results += $result
 
+            Update-DeploymentState `
+                -Results $results `
+                -Manifest $Manifest `
+                -SerialNumber $SerialNumber `
+                -Configuration $Configuration
+
             Write-DeploymentLog `
                 -Result $result `
                 -Configuration $Configuration `
@@ -91,8 +99,13 @@ function Invoke-DeploymentManifest {
             $result.FailureReason =
                 "Machine executable not found"
 
-            $results +=
-                $result
+            $results += $result
+
+            Update-DeploymentState `
+                -Results $results `
+                -Manifest $Manifest `
+                -SerialNumber $SerialNumber `
+                -Configuration $Configuration
 
             Write-DeploymentLog `
                 -Result $result `
@@ -134,12 +147,18 @@ function Invoke-DeploymentManifest {
                 Invoke-DeploymentStep `
                     -ResolvedStep $resolved
 
+            $results += $result
+
+            Update-DeploymentState `
+                -Results $results `
+                -Manifest $Manifest `
+                -SerialNumber $SerialNumber `
+                -Configuration $Configuration
+
             Write-DeploymentLog `
                 -Result $result `
                 -Configuration $Configuration `
                 -SerialNumber $SerialNumber
-
-            $results += $result
         }
         catch {
 
@@ -169,8 +188,13 @@ function Invoke-DeploymentManifest {
             $result.FailureReason =
                 $_.Exception.Message
 
-            $results +=
-                $result
+            $results += $result
+
+            Update-DeploymentState `
+                -Results $results `
+                -Manifest $Manifest `
+                -SerialNumber $SerialNumber `
+                -Configuration $Configuration
 
             Write-DeploymentLog `
                 -Result $result `

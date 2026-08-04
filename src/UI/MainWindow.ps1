@@ -9,6 +9,7 @@
 . "$PSScriptRoot\..\Deployment\ManifestExecutor.ps1"
 . "$PSScriptRoot\DeploymentProgressWindow.ps1"
 . "$PSScriptRoot\DeploymentSummaryWindow.ps1"
+. "$PSScriptRoot\..\Deployment\DeploymentStateService.ps1"
 
 #-----------Functions------------
 function Update-ApplicationList {
@@ -134,6 +135,57 @@ function Set-ProfileSelection {
     Update-FilteredApplicationList
 }
 
+function Test-ResumeDeployment {
+
+    param(
+        [string]$SerialNumber
+    )
+
+    $stateDirectory =
+        Join-Path `
+        $config.LogDirectory `
+        "State"
+    
+    $statePath =
+        Join-Path `
+            $stateDirectory `
+            "$SerialNumber.state.json"
+
+    if (-not (Test-Path $statePath)) {
+
+        return
+    }
+
+    $state =
+        Read-DeploymentState `
+            -Path $statePath
+
+    $message =
+@"
+Previous Deployment Detected
+
+Serial Number : $($state.SerialNumber)
+
+Completed Steps : $($state.CompletedSteps)
+
+Pending Steps : $($state.PendingSteps)
+
+Resume Deployment?
+"@
+
+    $result =
+        [System.Windows.MessageBox]::Show(
+            $message,
+            "Resume Deployment",
+            [System.Windows.MessageBoxButton]::YesNo,
+            [System.Windows.MessageBoxImage]::Question
+        )
+
+    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
+        Write-Host "Resume requested."
+    }
+}
+
 #-----------Main Window Logic------------
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName Microsoft.VisualBasic
@@ -216,6 +268,9 @@ $serialNumber =
 
 $serialNumberTextBox.Text =
     $serialNumber.Trim()
+
+Test-ResumeDeployment `
+    -SerialNumber $serialNumber
 
 $profiles =
     Get-Profiles `
@@ -417,10 +472,15 @@ $($failureList -join "`r`n`r`n")
         $summaryWindow.Close()
     })
 
-    $logPath =
-        Join-Path `
-            $config.LogDirectory `
-            "$serialNumber.log"
+$logDirectory =
+    Join-Path `
+        $config.LogDirectory `
+        $serialNumber
+
+$logPath =
+    Join-Path `
+        $logDirectory `
+        "$serialNumber.log"
 
     $openLogButton.Add_Click({
 
