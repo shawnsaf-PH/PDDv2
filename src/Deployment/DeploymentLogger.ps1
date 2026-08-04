@@ -11,10 +11,23 @@ function Write-DeploymentLog {
         [string]$SerialNumber
     )
 
-    $logPath =
-        Join-Path `
-            $Configuration.LogDirectory `
-            "$SerialNumber.log"
+$machineLogDirectory =
+    Join-Path `
+        $Configuration.LogDirectory `
+        $SerialNumber
+
+if (-not (Test-Path $machineLogDirectory)) {
+
+    New-Item `
+        -Path $machineLogDirectory `
+        -ItemType Directory `
+        -Force | Out-Null
+}
+
+$logPath =
+    Join-Path `
+        $machineLogDirectory `
+        "$SerialNumber.log"
 
     $lines = @()
 
