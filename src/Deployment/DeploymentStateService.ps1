@@ -79,9 +79,22 @@ function Update-DeploymentState {
     $state.Timestamp =
         Get-Date
 
-    $statePath =
+    $stateDirectory =
         Join-Path `
             $Configuration.LogDirectory `
+            "State"
+
+    if (-not (Test-Path $stateDirectory)) {
+
+        New-Item `
+            -Path $stateDirectory `
+            -ItemType Directory `
+            -Force | Out-Null
+    }
+
+    $statePath =
+        Join-Path `
+            $stateDirectory `
             "$SerialNumber.state.json"
 
     Save-DeploymentState `

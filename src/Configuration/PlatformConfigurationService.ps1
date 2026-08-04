@@ -4,7 +4,7 @@
 function Get-PlatformConfiguration {
     #throw "ENTERED GET-PLATFORMCONFIGURATION"
     
-    $configPath = "\\USDBTLBCA1MSH20\pdd$\Pddv2\PDDv2.ini"
+    $configPath = "\\usdbtlbca1msh20.code1.emi.philips.com\pdd$\Pddv2\PDDv2.ini"
 
     $configData = Read-IniFile -Path $configPath
 
