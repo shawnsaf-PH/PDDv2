@@ -61,6 +61,9 @@ function Update-DeploymentState {
     $state.CompletedSteps =
         $Results.Count
 
+    $state.LastCompletedStep =
+        $Results.Count
+
     $state.PendingSteps =
         $Manifest.Steps.Count - $Results.Count
 

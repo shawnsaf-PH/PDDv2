@@ -62,6 +62,15 @@ function Invoke-DeploymentManifest {
                 -SerialNumber $SerialNumber `
                 -Configuration $Configuration
 
+            if ($result.RebootRequired) {
+
+                Write-Host ""
+                Write-Host "Reboot required."
+                Write-Host "Stopping deployment."
+
+                return $results
+            }
+
             Write-DeploymentLog `
                 -Result $result `
                 -Configuration $Configuration `
@@ -106,6 +115,15 @@ function Invoke-DeploymentManifest {
                 -Manifest $Manifest `
                 -SerialNumber $SerialNumber `
                 -Configuration $Configuration
+
+            if ($result.RebootRequired) {
+
+                Write-Host ""
+                Write-Host "Reboot required."
+                Write-Host "Stopping deployment."
+
+                return $results
+            }
 
             Write-DeploymentLog `
                 -Result $result `
@@ -155,6 +173,15 @@ function Invoke-DeploymentManifest {
                 -SerialNumber $SerialNumber `
                 -Configuration $Configuration
 
+            if ($result.RebootRequired) {
+
+                Write-Host ""
+                Write-Host "Reboot required."
+                Write-Host "Stopping deployment."
+
+                return $results
+            }
+
             Write-DeploymentLog `
                 -Result $result `
                 -Configuration $Configuration `
@@ -195,6 +222,15 @@ function Invoke-DeploymentManifest {
                 -Manifest $Manifest `
                 -SerialNumber $SerialNumber `
                 -Configuration $Configuration
+
+            if ($result.RebootRequired) {
+
+                Write-Host ""
+                Write-Host "Reboot required."
+                Write-Host "Stopping deployment."
+
+                return $results
+            }
 
             Write-DeploymentLog `
                 -Result $result `
