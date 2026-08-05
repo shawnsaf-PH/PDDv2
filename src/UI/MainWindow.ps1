@@ -136,6 +136,129 @@ function Set-ProfileSelection {
     Update-FilteredApplicationList
 }
 
+function Show-DeploymentSummary {
+
+    param(
+
+        [array]$ExecutionResults,
+
+        [string]$SerialNumber
+    )
+
+    Write-Host "Show-DeploymentSummary called."
+
+    $successfulCount =
+        ($ExecutionResults |
+            Where-Object {
+                $_.Success
+            }).Count
+
+    $failedResults =
+        $ExecutionResults |
+        Where-Object {
+            -not $_.Success
+        }
+
+    $failedCount =
+        $failedResults.Count
+
+    $rebootRequired =
+        ($ExecutionResults |
+            Where-Object {
+                $_.RebootRequired
+            }).Count -gt 0
+
+    $totalCount =
+        $ExecutionResults.Count
+
+    $summaryWindow =
+        New-DeploymentSummaryWindow
+
+    $summaryHeaderTextBlock =
+        $summaryWindow.FindName(
+            "SummaryHeaderTextBlock"
+        )
+
+    $summaryTextBox =
+        $summaryWindow.FindName(
+            "SummaryTextBox"
+        )
+
+    $openLogButton =
+        $summaryWindow.FindName(
+            "OpenLogButton"
+        )
+
+    $closeButton =
+        $summaryWindow.FindName(
+            "CloseButton"
+        )
+
+    $summaryHeaderTextBlock.Text =
+        "Deployment Complete"
+
+    $failureList =
+        $failedResults |
+        ForEach-Object {
+
+@"
+$($_.ApplicationName)
+Reason: $($_.FailureReason)
+"@
+        }
+
+    $summary =
+@"
+Total Applications : $totalCount
+
+Successful         : $successfulCount
+
+Failed             : $failedCount
+
+Reboot Required    : $rebootRequired
+
+Failed Applications:
+
+$($failureList -join "`r`n`r`n")
+"@
+
+    if ($rebootRequired) {
+
+        $summary += @"
+
+*** SYSTEM REBOOT REQUIRED ***
+
+"@
+    }
+
+    $summaryTextBox.Text =
+        $summary
+
+    $logDirectory =
+        Join-Path `
+            $config.LogDirectory `
+            $SerialNumber
+
+    $logPath =
+        Join-Path `
+            $logDirectory `
+            "$SerialNumber.log"
+
+    $closeButton.Add_Click({
+
+        $summaryWindow.Close()
+    })
+
+    $openLogButton.Add_Click({
+
+        if (Test-Path $logPath) {
+
+            Invoke-Item $logPath
+        }
+    })
+
+    $summaryWindow.ShowDialog() | Out-Null
+}
 function Test-ResumeDeployment {
 
     param(
@@ -185,36 +308,17 @@ Resume Deployment?
             [System.Windows.MessageBoxImage]::Question
         )
 
-    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-        
-        Write-Host "Resume selected."
-        Write-Host "Config Directory:"
-        Write-Host $config.ConfigDirectory
-        Write-Host "State ManifestPath:"
-        Write-Host $state.ManifestPath
+    if ($result -ne [System.Windows.MessageBoxResult]::Yes) {
 
-        $manifestPath =
-            Join-Path `
-                $config.ConfigDirectory `
-                $state.ManifestPath
-
-                Write-Host "Manifest Path:"
-                Write-Host $manifestPath
-
-                Write-Host "Manifest Exists:"
-                Write-Host (Test-Path $manifestPath)
+        return
     }
+
+    Write-Host "Resume selected"
 
     $manifestPath =
         Join-Path `
             $config.ConfigDirectory `
             $state.ManifestPath
-
-    Write-Host "Manifest Path:"
-    Write-Host $manifestPath
-
-    Write-Host "Manifest Exists:"
-    Write-Host (Test-Path $manifestPath)
 
     if (-not (Test-Path $manifestPath)) {
 
@@ -262,13 +366,19 @@ Resume Deployment?
 
     Write-Host "Starting resumed deployment."
 
-    Invoke-DeploymentManifest `
-            -Manifest $manifest `
-            -Configuration $config `
-            -SerialNumber $SerialNumber `
-            -ProgressWindow $progressWindow
+    $executionResults = 
+        Invoke-DeploymentManifest `
+                -Manifest $manifest `
+                -Configuration $config `
+                -SerialNumber $SerialNumber `
+                -ProgressWindow $progressWindow
 
     $progressWindow.Close()
+
+    Show-DeploymentSummary `
+    -ExecutionResults $executionResults `
+    -SerialNumber $SerialNumber
+
 }
 
 #-----------Main Window Logic------------
@@ -280,6 +390,8 @@ Add-Type -AssemblyName Microsoft.VisualBasic
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 
 $window = [Windows.Markup.XamlReader]::Load($reader)
+
+$script:MainWindow = $window
 
 $iconPath =
     Join-Path `
