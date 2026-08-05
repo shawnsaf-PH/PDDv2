@@ -2,6 +2,7 @@
 . "$PSScriptRoot\..\Configuration\PlatformConfigurationService.ps1"
 . "$PSScriptRoot\..\Catalogs\CatalogService.ps1"
 . "$PSScriptRoot\..\Models\ApplicationViewModel.ps1"
+. "$PSScriptRoot\..\Manifests\ManifestReader.ps1"
 . "$PSScriptRoot\..\Manifests\ManifestService.ps1"
 . "$PSScriptRoot\..\Manifests\ManifestWriter.ps1"
 . "$PSScriptRoot\..\Profiles\ProfileService.ps1"
@@ -160,6 +161,9 @@ function Test-ResumeDeployment {
         Read-DeploymentState `
             -Path $statePath
 
+    $script:ResumeState =
+        $state
+
     $message =
 @"
 Previous Deployment Detected
@@ -182,8 +186,89 @@ Resume Deployment?
         )
 
     if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-        Write-Host "Resume requested."
+        
+        Write-Host "Resume selected."
+        Write-Host "Config Directory:"
+        Write-Host $config.ConfigDirectory
+        Write-Host "State ManifestPath:"
+        Write-Host $state.ManifestPath
+
+        $manifestPath =
+            Join-Path `
+                $config.ConfigDirectory `
+                $state.ManifestPath
+
+                Write-Host "Manifest Path:"
+                Write-Host $manifestPath
+
+                Write-Host "Manifest Exists:"
+                Write-Host (Test-Path $manifestPath)
     }
+
+    $manifestPath =
+        Join-Path `
+            $config.ConfigDirectory `
+            $state.ManifestPath
+
+    Write-Host "Manifest Path:"
+    Write-Host $manifestPath
+
+    Write-Host "Manifest Exists:"
+    Write-Host (Test-Path $manifestPath)
+
+    if (-not (Test-Path $manifestPath)) {
+
+        [System.Windows.MessageBox]::Show(
+            "Manifest not found.`n`n$manifestPath",
+            "Resume Deployment"
+        )
+
+        return
+    }
+
+    $manifest =
+        Read-DeploymentManifest `
+            -Path $manifestPath
+
+    Write-Host "Manifest loaded."
+    write-host "Manifest path: $manifestPath"
+    Write-Host "Steps:" $manifest.Steps.Count
+
+    $manifest.Steps =
+        @(
+            $manifest.Steps |
+            Where-Object {
+                $_.StepNumber -gt $state.LastCompletedStep
+            }
+        )
+
+    Write-Host "Remaining Steps:" $manifest.Steps.Count
+    
+    Write-Host ""
+    Write-Host "Resuming after step:" $state.LastCompletedStep
+    Write-Host "Remaining Steps:" $manifest.Steps.Count
+
+    [System.Windows.MessageBox]::Show(
+        "Resuming deployment at Step $($state.LastCompletedStep + 1).",
+        "Resume Deployment"
+    )
+
+    Write-Host "Preparing resumed deployment."
+
+    $progressWindow =
+        New-DeploymentProgressWindow
+
+    $progressWindow.Show()
+
+    Write-Host "Starting resumed deployment."
+
+    Invoke-DeploymentManifest `
+            -Manifest $manifest `
+            -Configuration $config `
+            -SerialNumber $SerialNumber `
+            -ProgressWindow $progressWindow
+
+    $progressWindow.Close()
 }
 
 #-----------Main Window Logic------------
@@ -268,6 +353,12 @@ $serialNumber =
 
 $serialNumberTextBox.Text =
     $serialNumber.Trim()
+
+$script:ResumeRequested =
+    $false
+
+$script:ResumeState =
+    $null
 
 Test-ResumeDeployment `
     -SerialNumber $serialNumber
@@ -464,13 +555,20 @@ Failed Applications:
 $($failureList -join "`r`n`r`n")
 "@
 
-    $summaryTextBox.Text =
-        $summary
+if ($rebootRequired) {
 
-    $closeButton.Add_Click({
+    $summary += @"
+*** SYSTEM REBOOT REQUIRED ***
+"@
+}
 
-        $summaryWindow.Close()
-    })
+$summaryTextBox.Text =
+    $summary
+
+$closeButton.Add_Click({
+
+    $summaryWindow.Close()
+})
 
 $logDirectory =
     Join-Path `
