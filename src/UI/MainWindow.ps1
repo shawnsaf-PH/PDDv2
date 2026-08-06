@@ -598,17 +598,64 @@ $generateButton.Add_Click({
         -SerialNumber $serialNumber `
         -ProgressWindow $progressWindow
 
-    $progressWindow.Close()
+    #$progressWindow.Hide()
 
     $rebootRequired =
-    ($executionResults |
-        Where-Object {
-            $_.RebootRequired
-        }).Count -gt 0
+        ($executionResults |
+            Where-Object {
+                $_.RebootRequired
+            }).Count -gt 0
 
-    if ($rebootRequired) {
+    if ($rebootRequired) {    
 
-        $script:MainWindow.Close()
+        $resumeDirectory =
+            "C:\Temp\PDDv2"
+
+        if (-not (Test-Path $resumeDirectory)) {
+
+            New-Item `
+                -Path $resumeDirectory `
+                -ItemType Directory `
+                -Force | Out-Null
+        }
+
+        $localLauncher =
+            Join-Path `
+                $resumeDirectory `
+                "Launch-PDDv2.cmd"
+
+        Copy-Item `
+            -Path $config.ResumeLauncher `
+            -Destination $localLauncher `
+            -Force
+
+        $runOnceKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce'
+
+        if (-not (Test-Path $runOnceKey)) {
+            New-Item -Path $runOnceKey -Force | Out-Null
+        }
+
+        New-ItemProperty `
+            -Path $runOnceKey `
+            -Name 'PDDv2Resume' `
+            -Value $localLauncher `
+            -PropertyType String `
+            -Force | Out-Null
+
+        shutdown.exe /r /t 10
+
+        #F all this code below
+        <#[System.Windows.MessageBox]::Show(
+            "Deployment requires a reboot. The computer will restart in 10 seconds and PDDv2 will automatically relaunch after sign-in.",
+            "Reboot Required",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Information
+        )#>
+
+        if ($null -ne $script:MainWindow) {
+
+            $script:MainWindow.Close()
+        }
 
         return
     }

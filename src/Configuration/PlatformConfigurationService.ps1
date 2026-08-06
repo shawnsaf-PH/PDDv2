@@ -24,6 +24,8 @@ function Get-PlatformConfiguration {
 
     $config.ProfileDirectory = $configData["ProfileDIR"]
 
+    $config.ResumeLauncher = $configData["ResumeLauncher"]
+
     $config.Toolboxes["Basic"] =
     $configData["BasicTOOLBOX"]
 
