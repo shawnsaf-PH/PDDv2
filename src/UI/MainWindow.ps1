@@ -145,8 +145,6 @@ function Show-DeploymentSummary {
         [string]$SerialNumber
     )
 
-    Write-Host "Show-DeploymentSummary called."
-
     $successfulCount =
         ($ExecutionResults |
             Where-Object {
@@ -313,8 +311,6 @@ Resume Deployment?
         return
     }
 
-    Write-Host "Resume selected"
-
     $manifestPath =
         Join-Path `
             $config.ConfigDirectory `
@@ -334,10 +330,6 @@ Resume Deployment?
         Read-DeploymentManifest `
             -Path $manifestPath
 
-    Write-Host "Manifest loaded."
-    write-host "Manifest path: $manifestPath"
-    Write-Host "Steps:" $manifest.Steps.Count
-
     $manifest.Steps =
         @(
             $manifest.Steps |
@@ -346,25 +338,15 @@ Resume Deployment?
             }
         )
 
-    Write-Host "Remaining Steps:" $manifest.Steps.Count
-    
-    Write-Host ""
-    Write-Host "Resuming after step:" $state.LastCompletedStep
-    Write-Host "Remaining Steps:" $manifest.Steps.Count
-
     [System.Windows.MessageBox]::Show(
         "Resuming deployment at Step $($state.LastCompletedStep + 1).",
         "Resume Deployment"
     )
 
-    Write-Host "Preparing resumed deployment."
-
     $progressWindow =
         New-DeploymentProgressWindow
 
     $progressWindow.Show()
-
-    Write-Host "Starting resumed deployment."
 
     $executionResults = 
         Invoke-DeploymentManifest `
@@ -375,10 +357,34 @@ Resume Deployment?
 
     $progressWindow.Close()
 
-    Show-DeploymentSummary `
-    -ExecutionResults $executionResults `
-    -SerialNumber $SerialNumber
+    $allExecutionResults =
+        @()
 
+    if ($null -ne $state.ExecutionResults) {
+
+        $allExecutionResults +=
+            $state.ExecutionResults
+    }
+
+    $allExecutionResults +=
+        $executionResults
+
+    $failedResults =
+        $executionResults |
+        Where-Object {
+            -not $_.Success
+        }
+
+    if ($failedResults.Count -eq 0) {
+
+        Remove-DeploymentState `
+            -SerialNumber $SerialNumber `
+            -Configuration $config
+    }
+
+    Show-DeploymentSummary `
+        -ExecutionResults $allExecutionResults `
+        -SerialNumber $SerialNumber
 }
 
 #-----------Main Window Logic------------
@@ -549,9 +555,6 @@ $generateButton.Add_Click({
 
     if ($failedResults.Count -gt 0) {
 
-        Write-Host ""
-        Write-Host "Validation Warnings"
-
         $failedResults |
             ForEach-Object {
 
@@ -589,15 +592,32 @@ $generateButton.Add_Click({
 
     $progressWindow.Show()
     
-    $executionResults = Invoke-DeploymentManifest -Manifest $manifest -Configuration $config -SerialNumber $serialNumber -ProgressWindow $progressWindow
+    $executionResults = Invoke-DeploymentManifest `
+        -Manifest $manifest `
+        -Configuration $config `
+        -SerialNumber $serialNumber `
+        -ProgressWindow $progressWindow
 
     $progressWindow.Close()
 
-    $successfulCount =
+    $rebootRequired =
     ($executionResults |
         Where-Object {
-            $_.Success
-        }).Count
+            $_.RebootRequired
+        }).Count -gt 0
+
+    if ($rebootRequired) {
+
+        $script:MainWindow.Close()
+
+        return
+    }
+
+    $successfulCount =
+        ($executionResults |
+            Where-Object {
+                $_.Success
+            }).Count
 
     $failedResults =
         $executionResults |
@@ -608,13 +628,12 @@ $generateButton.Add_Click({
     $failedCount = $failedResults.Count
 
     $rebootRequired =
-    ($executionResults |
-        Where-Object {
-            $_.RebootRequired
-        }).Count -gt 0
+        ($executionResults |
+            Where-Object {
+                $_.RebootRequired
+            }).Count -gt 0
 
-    $totalCount =
-    $executionResults.Count
+    $totalCount = $executionResults.Count
 
     $summaryWindow =
         New-DeploymentSummaryWindow

@@ -16,5 +16,7 @@ class DeploymentState {
 
     [bool]$RebootRequired
 
+    [array]$ExecutionResults
+
     [datetime]$Timestamp
 }
