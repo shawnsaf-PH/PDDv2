@@ -64,10 +64,6 @@ function Invoke-DeploymentManifest {
 
             if ($result.RebootRequired) {
 
-                Write-Host ""
-                Write-Host "Reboot required."
-                Write-Host "Stopping deployment."
-
                 return $results
             }
 
@@ -158,12 +154,14 @@ function Invoke-DeploymentManifest {
                 )
             }
 
-            Write-Host ""
-            Write-Host "Executing:" $step.Name
-
             $result =
                 Invoke-DeploymentStep `
                     -ResolvedStep $resolved
+
+            Write-DeploymentLog `
+                -Result $result `
+                -Configuration $Configuration `
+                -SerialNumber $SerialNumber
 
             $results += $result
 
@@ -181,11 +179,6 @@ function Invoke-DeploymentManifest {
 
                 return $results
             }
-
-            Write-DeploymentLog `
-                -Result $result `
-                -Configuration $Configuration `
-                -SerialNumber $SerialNumber
         }
         catch {
 

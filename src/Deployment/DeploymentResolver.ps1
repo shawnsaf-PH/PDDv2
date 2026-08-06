@@ -26,10 +26,6 @@ function Resolve-DeploymentStep {
         Write-Host $Step.Name
     }
 
-    Write-Host ""
-    Write-Host "Name:" $Step.Name
-    Write-Host "Department:" $Step.Department
-
     if (
         -not [string]::IsNullOrWhiteSpace($Step.Department) -and
         $Configuration.Toolboxes.ContainsKey($Step.Department)
