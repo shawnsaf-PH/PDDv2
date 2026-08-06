@@ -2,6 +2,7 @@
 . "$PSScriptRoot\..\Configuration\PlatformConfigurationService.ps1"
 . "$PSScriptRoot\..\Catalogs\CatalogService.ps1"
 . "$PSScriptRoot\..\Models\ApplicationViewModel.ps1"
+. "$PSScriptRoot\..\Manifests\ManifestReader.ps1"
 . "$PSScriptRoot\..\Manifests\ManifestService.ps1"
 . "$PSScriptRoot\..\Manifests\ManifestWriter.ps1"
 . "$PSScriptRoot\..\Profiles\ProfileService.ps1"
@@ -135,6 +136,127 @@ function Set-ProfileSelection {
     Update-FilteredApplicationList
 }
 
+function Show-DeploymentSummary {
+
+    param(
+
+        [array]$ExecutionResults,
+
+        [string]$SerialNumber
+    )
+
+    $successfulCount =
+        ($ExecutionResults |
+            Where-Object {
+                $_.Success
+            }).Count
+
+    $failedResults =
+        $ExecutionResults |
+        Where-Object {
+            -not $_.Success
+        }
+
+    $failedCount =
+        $failedResults.Count
+
+    $rebootRequired =
+        ($ExecutionResults |
+            Where-Object {
+                $_.RebootRequired
+            }).Count -gt 0
+
+    $totalCount =
+        $ExecutionResults.Count
+
+    $summaryWindow =
+        New-DeploymentSummaryWindow
+
+    $summaryHeaderTextBlock =
+        $summaryWindow.FindName(
+            "SummaryHeaderTextBlock"
+        )
+
+    $summaryTextBox =
+        $summaryWindow.FindName(
+            "SummaryTextBox"
+        )
+
+    $openLogButton =
+        $summaryWindow.FindName(
+            "OpenLogButton"
+        )
+
+    $closeButton =
+        $summaryWindow.FindName(
+            "CloseButton"
+        )
+
+    $summaryHeaderTextBlock.Text =
+        "Deployment Complete"
+
+    $failureList =
+        $failedResults |
+        ForEach-Object {
+
+@"
+$($_.ApplicationName)
+Reason: $($_.FailureReason)
+"@
+        }
+
+    $summary =
+@"
+Total Applications : $totalCount
+
+Successful         : $successfulCount
+
+Failed             : $failedCount
+
+Reboot Required    : $rebootRequired
+
+Failed Applications:
+
+$($failureList -join "`r`n`r`n")
+"@
+
+    if ($rebootRequired) {
+
+        $summary += @"
+
+*** SYSTEM REBOOT REQUIRED ***
+
+"@
+    }
+
+    $summaryTextBox.Text =
+        $summary
+
+    $logDirectory =
+        Join-Path `
+            $config.LogDirectory `
+            $SerialNumber
+
+    $logPath =
+        Join-Path `
+            $logDirectory `
+            "$SerialNumber.log"
+
+    $closeButton.Add_Click({
+
+        $summaryWindow.Close()
+    })
+
+    $openLogButton.Add_Click({
+
+        if (Test-Path $logPath) {
+
+            Invoke-Item $logPath
+        }
+    })
+
+    $summaryWindow.ShowDialog() | Out-Null
+}
 function Test-ResumeDeployment {
 
     param(
@@ -160,6 +282,9 @@ function Test-ResumeDeployment {
         Read-DeploymentState `
             -Path $statePath
 
+    $script:ResumeState =
+        $state
+
     $message =
 @"
 Previous Deployment Detected
@@ -181,9 +306,85 @@ Resume Deployment?
             [System.Windows.MessageBoxImage]::Question
         )
 
-    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-        Write-Host "Resume requested."
+    if ($result -ne [System.Windows.MessageBoxResult]::Yes) {
+
+        return
     }
+
+    $manifestPath =
+        Join-Path `
+            $config.ConfigDirectory `
+            $state.ManifestPath
+
+    if (-not (Test-Path $manifestPath)) {
+
+        [System.Windows.MessageBox]::Show(
+            "Manifest not found.`n`n$manifestPath",
+            "Resume Deployment"
+        )
+
+        return
+    }
+
+    $manifest =
+        Read-DeploymentManifest `
+            -Path $manifestPath
+
+    $manifest.Steps =
+        @(
+            $manifest.Steps |
+            Where-Object {
+                $_.StepNumber -gt $state.LastCompletedStep
+            }
+        )
+
+    [System.Windows.MessageBox]::Show(
+        "Resuming deployment at Step $($state.LastCompletedStep + 1).",
+        "Resume Deployment"
+    )
+
+    $progressWindow =
+        New-DeploymentProgressWindow
+
+    $progressWindow.Show()
+
+    $executionResults = 
+        Invoke-DeploymentManifest `
+                -Manifest $manifest `
+                -Configuration $config `
+                -SerialNumber $SerialNumber `
+                -ProgressWindow $progressWindow
+
+    $progressWindow.Close()
+
+    $allExecutionResults =
+        @()
+
+    if ($null -ne $state.ExecutionResults) {
+
+        $allExecutionResults +=
+            $state.ExecutionResults
+    }
+
+    $allExecutionResults +=
+        $executionResults
+
+    $failedResults =
+        $executionResults |
+        Where-Object {
+            -not $_.Success
+        }
+
+    if ($failedResults.Count -eq 0) {
+
+        Remove-DeploymentState `
+            -SerialNumber $SerialNumber `
+            -Configuration $config
+    }
+
+    Show-DeploymentSummary `
+        -ExecutionResults $allExecutionResults `
+        -SerialNumber $SerialNumber
 }
 
 #-----------Main Window Logic------------
@@ -195,6 +396,8 @@ Add-Type -AssemblyName Microsoft.VisualBasic
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 
 $window = [Windows.Markup.XamlReader]::Load($reader)
+
+$script:MainWindow = $window
 
 $iconPath =
     Join-Path `
@@ -268,6 +471,12 @@ $serialNumber =
 
 $serialNumberTextBox.Text =
     $serialNumber.Trim()
+
+$script:ResumeRequested =
+    $false
+
+$script:ResumeState =
+    $null
 
 Test-ResumeDeployment `
     -SerialNumber $serialNumber
@@ -346,9 +555,6 @@ $generateButton.Add_Click({
 
     if ($failedResults.Count -gt 0) {
 
-        Write-Host ""
-        Write-Host "Validation Warnings"
-
         $failedResults |
             ForEach-Object {
 
@@ -386,15 +592,79 @@ $generateButton.Add_Click({
 
     $progressWindow.Show()
     
-    $executionResults = Invoke-DeploymentManifest -Manifest $manifest -Configuration $config -SerialNumber $serialNumber -ProgressWindow $progressWindow
+    $executionResults = Invoke-DeploymentManifest `
+        -Manifest $manifest `
+        -Configuration $config `
+        -SerialNumber $serialNumber `
+        -ProgressWindow $progressWindow
 
-    $progressWindow.Close()
+    #$progressWindow.Hide()
+
+    $rebootRequired =
+        ($executionResults |
+            Where-Object {
+                $_.RebootRequired
+            }).Count -gt 0
+
+    if ($rebootRequired) {    
+
+        $resumeDirectory =
+            "C:\Temp\PDDv2"
+
+        if (-not (Test-Path $resumeDirectory)) {
+
+            New-Item `
+                -Path $resumeDirectory `
+                -ItemType Directory `
+                -Force | Out-Null
+        }
+
+        $localLauncher =
+            Join-Path `
+                $resumeDirectory `
+                "Launch-PDDv2.cmd"
+
+        Copy-Item `
+            -Path $config.ResumeLauncher `
+            -Destination $localLauncher `
+            -Force
+
+        $runOnceKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce'
+
+        if (-not (Test-Path $runOnceKey)) {
+            New-Item -Path $runOnceKey -Force | Out-Null
+        }
+
+        New-ItemProperty `
+            -Path $runOnceKey `
+            -Name 'PDDv2Resume' `
+            -Value $localLauncher `
+            -PropertyType String `
+            -Force | Out-Null
+
+        shutdown.exe /r /t 10
+
+        #F all this code below
+        <#[System.Windows.MessageBox]::Show(
+            "Deployment requires a reboot. The computer will restart in 10 seconds and PDDv2 will automatically relaunch after sign-in.",
+            "Reboot Required",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Information
+        )#>
+
+        if ($null -ne $script:MainWindow) {
+
+            $script:MainWindow.Close()
+        }
+
+        return
+    }
 
     $successfulCount =
-    ($executionResults |
-        Where-Object {
-            $_.Success
-        }).Count
+        ($executionResults |
+            Where-Object {
+                $_.Success
+            }).Count
 
     $failedResults =
         $executionResults |
@@ -405,13 +675,12 @@ $generateButton.Add_Click({
     $failedCount = $failedResults.Count
 
     $rebootRequired =
-    ($executionResults |
-        Where-Object {
-            $_.RebootRequired
-        }).Count -gt 0
+        ($executionResults |
+            Where-Object {
+                $_.RebootRequired
+            }).Count -gt 0
 
-    $totalCount =
-    $executionResults.Count
+    $totalCount = $executionResults.Count
 
     $summaryWindow =
         New-DeploymentSummaryWindow
@@ -464,13 +733,20 @@ Failed Applications:
 $($failureList -join "`r`n`r`n")
 "@
 
-    $summaryTextBox.Text =
-        $summary
+if ($rebootRequired) {
 
-    $closeButton.Add_Click({
+    $summary += @"
+*** SYSTEM REBOOT REQUIRED ***
+"@
+}
 
-        $summaryWindow.Close()
-    })
+$summaryTextBox.Text =
+    $summary
+
+$closeButton.Add_Click({
+
+    $summaryWindow.Close()
+})
 
 $logDirectory =
     Join-Path `

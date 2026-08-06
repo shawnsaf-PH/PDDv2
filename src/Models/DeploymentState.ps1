@@ -8,11 +8,15 @@ class DeploymentState {
 
     [int]$CompletedSteps
 
+    [int]$LastCompletedStep
+
     [int]$CurrentStep
 
     [int]$PendingSteps
 
     [bool]$RebootRequired
+
+    [array]$ExecutionResults
 
     [datetime]$Timestamp
 }

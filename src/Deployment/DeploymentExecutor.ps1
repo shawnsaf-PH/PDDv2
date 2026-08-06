@@ -26,10 +26,6 @@ function Invoke-DeploymentStep {
 
         return $result
     }
-
-    Write-Host ""
-    Write-Host "Invoke-DeploymentStep:"
-    Write-Host $ResolvedStep.Step.Name
     
     $result.StartTime = Get-Date
 
@@ -44,8 +40,6 @@ function Invoke-DeploymentStep {
     }
     else {
 
-        Write-Host "Starting Process..."
-
         $process =
             Start-Process `
                 -FilePath $ResolvedStep.MachineExePath `
@@ -53,9 +47,6 @@ function Invoke-DeploymentStep {
                 -WorkingDirectory $ResolvedStep.ApplicationPath `
                 -Wait `
                 -PassThru
-
-        Write-Host "Process Returned"
-        Write-Host "Exit Code:" $process.ExitCode
     }
 
     $result.EndTime = Get-Date
@@ -74,9 +65,6 @@ function Invoke-DeploymentStep {
 
     $result.RebootRequired =
         $ResolvedStep.Step.Reboot
-
-    Write-Host "Invoke-DeploymentStep Complete:"
-    Write-Host $ResolvedStep.Step.Name
     
     return $result
 }

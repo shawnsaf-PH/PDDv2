@@ -15,6 +15,7 @@ class PlatformConfiguration {
 
     [string]$JoinACC
     [string]$JoinPASS
+    [string]$ResumeLauncher
 
     [string]$LocalAdminName
     [string]$LocalAdminPASS

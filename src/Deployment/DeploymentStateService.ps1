@@ -30,6 +30,34 @@ function Read-DeploymentState {
         ConvertFrom-Json
 }
 
+function Remove-DeploymentState {
+
+    param(
+        [Parameter(Mandatory)]
+        [string]$SerialNumber,
+
+        [Parameter(Mandatory)]
+        [object]$Configuration
+    )
+
+    $stateDirectory =
+        Join-Path `
+            $Configuration.LogDirectory `
+            "State"
+
+    $statePath =
+        Join-Path `
+            $stateDirectory `
+            "$SerialNumber.state.json"
+
+    if (Test-Path $statePath) {
+
+        Remove-Item `
+            -Path $statePath `
+            -Force
+    }
+}
+
 function Update-DeploymentState {
 
     param(
@@ -60,6 +88,12 @@ function Update-DeploymentState {
 
     $state.CompletedSteps =
         $Results.Count
+
+    $state.LastCompletedStep =
+        $Results.Count
+
+    $state.ExecutionResults =
+        $Results
 
     $state.PendingSteps =
         $Manifest.Steps.Count - $Results.Count
