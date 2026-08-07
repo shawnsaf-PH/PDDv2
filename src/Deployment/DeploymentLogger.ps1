@@ -11,10 +11,10 @@ function Write-DeploymentLog {
         [string]$SerialNumber
     )
 
-$machineLogDirectory =
-    Join-Path `
-        $Configuration.LogDirectory `
-        $SerialNumber
+    $machineLogDirectory =
+        Join-Path `
+            $Configuration.LocalWorkingDirectory `
+            $SerialNumber
 
 if (-not (Test-Path $machineLogDirectory)) {
 
