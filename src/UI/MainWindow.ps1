@@ -325,8 +325,10 @@ function Test-ResumeDeployment {
 
     if (-not (Test-Path $statePath)) {
 
-        return
+        return $false
+
     }
+
 
     $state =
         Read-DeploymentState `
@@ -358,7 +360,7 @@ Resume Deployment?
 
     if ($result -ne [System.Windows.MessageBoxResult]::Yes) {
 
-        return
+        return $true
     }
 
     $deploymentDirectory =
@@ -440,6 +442,8 @@ Resume Deployment?
     Show-DeploymentSummary `
         -ExecutionResults $allExecutionResults `
         -SerialNumber $SerialNumber
+
+    return $true
 }
 
 #-----------Main Window Logic------------
@@ -524,29 +528,33 @@ if ($config.IniFilesDirectory -match "USDBTLBCA1MS1IT") {
 $serialNumber =
     (Get-CimInstance Win32_BIOS).SerialNumber
 
-$selectedComputerName =
-    Show-ComputerNameDialog `
-        -DefaultComputerName $serialNumber
-
-if ($null -eq $selectedComputerName) {
-
-    return
-}
-
-$serialNumberTextBox.Text =
-    $selectedComputerName
-
-$serialNumberTextBox.IsReadOnly =
-    $true
-
 $script:ResumeRequested =
     $false
 
 $script:ResumeState =
     $null
 
-Test-ResumeDeployment `
-    -SerialNumber $serialNumber
+$resumeHandled =
+    Test-ResumeDeployment `
+        -SerialNumber $serialNumber
+
+if (-not $resumeHandled) {
+    $selectedComputerName =
+        Show-ComputerNameDialog `
+            -DefaultComputerName $serialNumber
+
+if ($null -eq $selectedComputerName) {
+    $window.Close()
+    return
+}
+
+$serialNumberTextBox.Text =
+        $selectedComputerName
+
+$serialNumberTextBox.IsReadOnly =
+        $true
+}
+
 
 $profiles =
     Get-Profiles `
