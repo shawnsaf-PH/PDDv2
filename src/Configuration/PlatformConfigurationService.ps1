@@ -24,6 +24,8 @@ function Get-PlatformConfiguration {
 
     $config.ProfileDirectory = $configData["ProfileDIR"]
 
+    $config.LocalWorkingDirectory = $configData["LocalWorkingDirectory"]
+
     $config.ResumeLauncher = $configData["ResumeLauncher"]
 
     $config.Toolboxes["Basic"] =
@@ -96,6 +98,14 @@ function Get-PlatformConfiguration {
     $config.LayoutExtra = $configData["LayoutExtra"]
 
     $config.LayoutDefault = $configData["LayoutDefault"]
+    
+    if (-not (Test-Path $config.LocalWorkingDirectory)) {
+
+        New-Item `
+            -Path $config.LocalWorkingDirectory `
+            -ItemType Directory `
+            -Force | Out-Null
+    }
     
     return $config
 }

@@ -242,9 +242,32 @@ $($failureList -join "`r`n`r`n")
             $logDirectory `
             "$SerialNumber.log"
 
+    $artifactsArchived = $false
+
     $closeButton.Add_Click({
 
+        if (-not $artifactsArchived) {
+
+            Copy-DeploymentArtifacts `
+                -SerialNumber $SerialNumber `
+                -Configuration $config
+
+            $artifactsArchived = $true
+        }
+
         $summaryWindow.Close()
+    })
+
+    $summaryWindow.Add_Closing({
+
+        if (-not $artifactsArchived) {
+
+            Copy-DeploymentArtifacts `
+                -SerialNumber $SerialNumber `
+                -Configuration $config
+
+            $artifactsArchived = $true
+        }
     })
 
     $openLogButton.Add_Click({
@@ -265,8 +288,8 @@ function Test-ResumeDeployment {
 
     $stateDirectory =
         Join-Path `
-        $config.LogDirectory `
-        "State"
+            $config.LocalWorkingDirectory `
+            $SerialNumber
     
     $statePath =
         Join-Path `
@@ -311,9 +334,14 @@ Resume Deployment?
         return
     }
 
+    $deploymentDirectory =
+        Join-Path `
+            $config.LocalWorkingDirectory `
+            $SerialNumber
+
     $manifestPath =
         Join-Path `
-            $config.ConfigDirectory `
+            $deploymentDirectory `
             $state.ManifestPath
 
     if (-not (Test-Path $manifestPath)) {
@@ -579,9 +607,22 @@ $generateButton.Add_Click({
     $fileName =
         "$serialNumber.ini"
 
+    $deploymentDirectory =
+        Join-Path `
+            $config.LocalWorkingDirectory `
+            $serialNumber
+
+    if (-not (Test-Path $deploymentDirectory)) {
+
+        New-Item `
+            -Path $deploymentDirectory `
+            -ItemType Directory `
+            -Force | Out-Null
+    }
+
     $manifestPath =
         Join-Path `
-            $config.ConfigDirectory `
+            $deploymentDirectory `
             $fileName
 
     Write-DeploymentManifest `
@@ -609,7 +650,7 @@ $generateButton.Add_Click({
     if ($rebootRequired) {    
 
         $resumeDirectory =
-            "C:\Temp\PDDv2"
+        $config.LocalWorkingDirectory
 
         if (-not (Test-Path $resumeDirectory)) {
 

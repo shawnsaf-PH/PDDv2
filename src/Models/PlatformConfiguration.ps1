@@ -3,6 +3,7 @@ class PlatformConfiguration {
     [string]$PddDirectory
     [string]$ConfigDirectory
     [string]$LogDirectory
+    [string]$LocalWorkingDirectory
     [string]$IniFilesDirectory
     [string]$ProfileDirectory
 

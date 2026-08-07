@@ -30,6 +30,46 @@ function Read-DeploymentState {
         ConvertFrom-Json
 }
 
+function Copy-DeploymentArtifacts {
+
+    param(
+
+        [Parameter(Mandatory)]
+        [string]$SerialNumber,
+
+        [Parameter(Mandatory)]
+        [object]$Configuration
+    )
+
+    $sourceDirectory =
+        Join-Path `
+            $Configuration.LocalWorkingDirectory `
+            $SerialNumber
+
+    $destinationDirectory =
+        Join-Path `
+            $Configuration.LogDirectory `
+            $SerialNumber
+
+    if (-not (Test-Path $sourceDirectory)) {
+
+        return
+    }
+
+    if (-not (Test-Path $destinationDirectory)) {
+
+        New-Item `
+            -Path $destinationDirectory `
+            -ItemType Directory `
+            -Force | Out-Null
+    }
+
+    Copy-Item `
+        -Path (Join-Path $sourceDirectory '*') `
+        -Destination $destinationDirectory `
+        -Recurse `
+        -Force
+}
 function Remove-DeploymentState {
 
     param(
@@ -42,8 +82,8 @@ function Remove-DeploymentState {
 
     $stateDirectory =
         Join-Path `
-            $Configuration.LogDirectory `
-            "State"
+            $Configuration.LocalWorkingDirectory `
+            $SerialNumber
 
     $statePath =
         Join-Path `
@@ -115,8 +155,8 @@ function Update-DeploymentState {
 
     $stateDirectory =
         Join-Path `
-            $Configuration.LogDirectory `
-            "State"
+            $Configuration.LocalWorkingDirectory `
+            $SerialNumber
 
     if (-not (Test-Path $stateDirectory)) {
 
