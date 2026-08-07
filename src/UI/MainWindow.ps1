@@ -152,13 +152,18 @@ function Show-DeploymentSummary {
             }).Count
 
     $failedResults =
-        $ExecutionResults |
-        Where-Object {
-            -not $_.Success
-        }
+        @(
+            $ExecutionResults |
+            Where-Object {
+                -not $_.Success
+            }
+        )
 
     $failedCount =
         $failedResults.Count
+
+    Write-Host "Failed Results Count: $failedCount"
+    Write-Host "Failed Results Type: $($failedResults.GetType().FullName)"
 
     $rebootRequired =
         ($ExecutionResults |
@@ -196,14 +201,16 @@ function Show-DeploymentSummary {
         "Deployment Complete"
 
     $failureList =
-        $failedResults |
-        ForEach-Object {
+        @(
+            $failedResults |
+            ForEach-Object {
 
 @"
 $($_.ApplicationName)
 Reason: $($_.FailureReason)
 "@
         }
+    )
 
     $summary =
 @"
