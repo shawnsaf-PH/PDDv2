@@ -162,9 +162,6 @@ function Show-DeploymentSummary {
     $failedCount =
         $failedResults.Count
 
-    Write-Host "Failed Results Count: $failedCount"
-    Write-Host "Failed Results Type: $($failedResults.GetType().FullName)"
-
     $rebootRequired =
         ($ExecutionResults |
             Where-Object {
@@ -286,6 +283,29 @@ $($failureList -join "`r`n`r`n")
     })
 
     $summaryWindow.ShowDialog() | Out-Null
+}
+
+function Show-ComputerNameDialog {
+
+    param(
+        [string]$DefaultComputerName
+    )
+
+    Add-Type -AssemblyName Microsoft.VisualBasic
+
+    $computerName =
+        [Microsoft.VisualBasic.Interaction]::InputBox(
+            "Enter computer name:",
+            "Computer Name Confirmation",
+            $DefaultComputerName
+        )
+
+    if ([string]::IsNullOrWhiteSpace($computerName)) {
+
+        return $null
+    }
+
+    return $computerName.Trim()
 }
 function Test-ResumeDeployment {
 
@@ -504,8 +524,20 @@ if ($config.IniFilesDirectory -match "USDBTLBCA1MS1IT") {
 $serialNumber =
     (Get-CimInstance Win32_BIOS).SerialNumber
 
+$selectedComputerName =
+    Show-ComputerNameDialog `
+        -DefaultComputerName $serialNumber
+
+if ($null -eq $selectedComputerName) {
+
+    return
+}
+
 $serialNumberTextBox.Text =
-    $serialNumber.Trim()
+    $selectedComputerName
+
+$serialNumberTextBox.IsReadOnly =
+    $true
 
 $script:ResumeRequested =
     $false
